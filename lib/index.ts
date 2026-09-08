@@ -147,50 +147,42 @@ function buildTransform(svg: ParsedSvg, x: number, y: number): string {
 
 // Helper: Rename IDs to avoid collisions
 function namespaceIds(content: string, suffix: string): string {
-  // Find all id attributes and build a map
-  const idMap = new Map<string, string>();
-  const idRegex = /\bid="([^"]+)"/g;
-  let match: RegExpExecArray | null;
+  // Find all id attributes (single or double quoted) and build a map
+  const idMap = new Map<string, string>()
+  const idRegex = /\bid=(["'])([^"']+)\1/g
+  let match: RegExpExecArray | null
 
   while ((match = idRegex.exec(content)) !== null) {
-    const oldId = match[1];
-    if (!oldId) continue;
+    const oldId = match[2]
+    if (!oldId) continue
 
-    const newId = `${oldId}${suffix}`;
-    idMap.set(oldId, newId);
+    const newId = `${oldId}${suffix}`
+    idMap.set(oldId, newId)
   }
 
   if (idMap.size === 0) {
-    return content; // No IDs to rename
+    return content // No IDs to rename
   }
 
-  // Replace id attributes
-  let result = content.replace(idRegex, (_, id: string) => {
-    return `id="${idMap.get(id) || id}"`;
-  });
+  // Replace id attributes, preserving quote style
+  let result = content.replace(idRegex, (_full, quote: string, id: string) => {
+    return `id=${quote}${idMap.get(id) || id}${quote}`
+  })
 
-  // Replace references: url(#id)
-  result = result.replace(/url\(#([^)]+)\)/g, (match, id) => {
-    return idMap.has(id) ? `url(#${idMap.get(id)})` : match;
-  });
+  // Replace references: url(#id) in fill/clip-path/style/etc.
+  result = result.replace(/url\(#([^)]+)\)/g, (full, id) => {
+    return idMap.has(id) ? `url(#${idMap.get(id)})` : full
+  })
 
-  // Replace xlink:href="#id" and href="#id"
+  // Replace xlink:href="#id" / href='#id'
   result = result.replace(
-    /(xlink:href|href)="#([^"]+)"/g,
-    (match, attr, id) => {
-      return idMap.has(id) ? `${attr}="#${idMap.get(id)}"` : match;
-    }
-  );
+    /(xlink:href|href)=(["'])#([^"']+)\2/g,
+    (full, attr, quote, id) => {
+      return idMap.has(id) ? `${attr}=${quote}#${idMap.get(id)}${quote}` : full
+    },
+  )
 
-  // Replace style attributes containing url(#id)
-  result = result.replace(/style="([^"]*)"/g, (_match, styleContent: string) => {
-    const newStyle = styleContent.replace(/url\(#([^)]+)\)/g, (m: string, id: string) => {
-      return idMap.has(id) ? `url(#${idMap.get(id)})` : m;
-    });
-    return `style="${newStyle}"`;
-  });
-
-  return result;
+  return result
 }
 
 // Helper: Normalize SVGs to same approximate size

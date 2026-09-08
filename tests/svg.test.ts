@@ -247,6 +247,35 @@ describe("ID collision handling", () => {
     await expect(result).toMatchSvgSnapshot(import.meta.path);
   });
 
+  test("renames duplicate gradient IDs with single quotes", async () => {
+    const svg1 = `<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id='grad1' x1='0%' y1='0%' x2='100%' y2='0%'>
+      <stop offset='0%' style='stop-color:rgb(255,0,0);stop-opacity:1' />
+      <stop offset='100%' style='stop-color:rgb(0,0,255);stop-opacity:1' />
+    </linearGradient>
+  </defs>
+  <rect x='10' y='10' width='80' height='80' fill='url(#grad1)' />
+</svg>`;
+
+    const svg2 = `<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id='grad1' x1='0%' y1='0%' x2='0%' y2='100%'>
+      <stop offset='0%' style='stop-color:rgb(0,255,0);stop-opacity:1' />
+      <stop offset='100%' style='stop-color:rgb(255,255,0);stop-opacity:1' />
+    </linearGradient>
+  </defs>
+  <circle cx='50' cy='50' r='40' fill='url(#grad1)' />
+</svg>`;
+
+    const result = stackSvgsHorizontally([svg1, svg2]);
+
+    expect(result).toContain("id='grad1'")
+    expect(result).toContain("id='grad1__stack1'")
+    expect(result).toContain("fill='url(#grad1)'")
+    expect(result).toContain("fill='url(#grad1__stack1)'")
+  });
+
   test("handles clipPath ID collisions", async () => {
     const svg1 = `<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -294,6 +323,28 @@ describe("ID collision handling", () => {
     expect(result).toContain('xlink:href="#shape1__stack1"');
 
     await expect(result).toMatchSvgSnapshot(import.meta.path);
+  });
+
+  test("handles xlink:href ID references with single quotes", async () => {
+    const svg1 = `<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <circle id='shape1' cx='5' cy='5' r='5' fill='red' />
+  </defs>
+  <use xlink:href='#shape1' x='20' y='20' />
+</svg>`;
+
+    const svg2 = `<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <rect id='shape1' width='10' height='10' fill='blue' />
+  </defs>
+  <use xlink:href='#shape1' x='30' y='30' />
+</svg>`;
+
+    const result = stackSvgsHorizontally([svg1, svg2]);
+
+    expect(result).toContain("id='shape1'");
+    expect(result).toContain("id='shape1__stack1'");
+    expect(result).toContain("xlink:href='#shape1__stack1'");
   });
 });
 

@@ -8,6 +8,7 @@ interface StackOptions {
 interface ParsedSvg {
   width: number;
   height: number;
+  normalizationScale?: number;
   viewBox?: string;
   viewBoxMinX?: number;
   viewBoxMinY?: number;
@@ -140,6 +141,8 @@ function buildTransform(svg: ParsedSvg, x: number, y: number): string {
     // Replicate viewBox: scale then translate to account for minX/minY
     transforms.push(`scale(${scaleX}, ${scaleY})`);
     transforms.push(`translate(${-minX}, ${-minY})`);
+  } else if (svg.normalizationScale !== undefined && svg.normalizationScale !== 1) {
+    transforms.push(`scale(${svg.normalizationScale})`);
   }
 
   return transforms.join(" ");
@@ -222,6 +225,7 @@ function normalizeSvgSizes(svgs: ParsedSvg[], targetSize?: number): ParsedSvg[] 
       ...svg,
       width: svg.width * scale,
       height: svg.height * scale,
+      normalizationScale: scale,
     };
   });
 }

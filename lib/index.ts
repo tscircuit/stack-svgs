@@ -248,7 +248,7 @@ function mergeXmlnsAttributes(svgs: ParsedSvg[]): Record<string, string> {
 // Helper: Serialize attributes to string
 function serializeAttributes(attrs: Record<string, string>): string {
   return Object.entries(attrs)
-    .map(([k, v]) => `${k}="${v}"`)
+    .map(([k, v]) => `${k}="${v.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;")}"`)
     .join(" ");
 }
 

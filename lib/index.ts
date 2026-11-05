@@ -29,7 +29,8 @@ function parseSvg(svgString: string): ParsedSvg {
   const attributeString = svgMatch[1] ?? "";
 
   // Improved attribute parsing: handles single/double quotes and namespaced attributes
-  const attrRegex = /([A-Za-z_:][A-Za-z0-9_.:-]*)=(?:"([^"]*)"|'([^']*)')/g;
+  // Valid XML permits whitespace around the equals sign: width = "20"
+  const attrRegex = /([A-Za-z_:][A-Za-z0-9_.:-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
   let match: RegExpExecArray | null;
   while ((match = attrRegex.exec(attributeString)) !== null) {
     const attrName = match[1];

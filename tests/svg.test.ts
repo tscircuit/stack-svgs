@@ -398,3 +398,88 @@ describe("rootAttributes option", () => {
     expect(result).toContain('class="my-svg"');
   });
 });
+
+describe("whitespace around attribute equals signs (issue #4)", () => {
+  const make = (attrs: string) =>
+    `<svg ${attrs} xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" fill="red" /></svg>`;
+
+  test("horizontal stack with spaces around = (double quotes)", () => {
+    const result = stackSvgsHorizontally(
+      [make(`width = "20" height = "10"`), make(`width = "20" height = "10"`)],
+      { gap: 3, normalizeSize: false }
+    );
+    expect(result).toContain(`width="43"`);
+    expect(result).toContain(`height="10"`);
+  });
+
+  test("vertical stack with spaces around = (double quotes)", () => {
+    const result = stackSvgsVertically(
+      [make(`width = "20" height = "10"`), make(`width = "20" height = "10"`)],
+      { gap: 3, normalizeSize: false }
+    );
+    expect(result).toContain(`width="20"`);
+    expect(result).toContain(`height="23"`);
+  });
+
+  test("single quotes with whitespace around =", () => {
+    const result = stackSvgsHorizontally([make(`width = \'20\' height = \'10\'`)], {
+      normalizeSize: false,
+    });
+    expect(result).toContain(`width="20"`);
+    expect(result).toContain(`height="10"`);
+  });
+
+  test("tabs around =", () => {
+    const result = stackSvgsHorizontally([make(`width\t=\t"20" height\t=\t"10"`)], {
+      normalizeSize: false,
+    });
+    expect(result).toContain(`width="20"`);
+    expect(result).toContain(`height="10"`);
+  });
+
+  test("newlines around =", () => {
+    const result = stackSvgsHorizontally([make(`width\n=\n"20" height\n=\n"10"`)], {
+      normalizeSize: false,
+    });
+    expect(result).toContain(`width="20"`);
+    expect(result).toContain(`height="10"`);
+  });
+
+  test("space before = only", () => {
+    const result = stackSvgsHorizontally([make(`width ="20" height ="10"`)], {
+      normalizeSize: false,
+    });
+    expect(result).toContain(`width="20"`);
+    expect(result).toContain(`height="10"`);
+  });
+
+  test("space after = only", () => {
+    const result = stackSvgsHorizontally([make(`width= "20" height= "10"`)], {
+      normalizeSize: false,
+    });
+    expect(result).toContain(`width="20"`);
+    expect(result).toContain(`height="10"`);
+  });
+
+  test("normalization with nonzero viewBox origin", () => {
+    const result = stackSvgsHorizontally(
+      [
+        make(`width = "20" height = "10" viewBox = "10 5 20 10"`),
+        make(`width = "20" height = "10" viewBox = "10 5 20 10"`),
+      ],
+      { gap: 3, normalizeSize: false }
+    );
+    expect(result).toContain(`width="43"`);
+    expect(result).toContain(`height="10"`);
+    // transforms must compensate the nonzero viewBox origin
+    expect(result).toContain("translate(-10, -5)");
+  });
+
+  test("compact attribute syntax retains existing behavior", () => {
+    const result = stackSvgsHorizontally([make(`width="20" height="10"`)], {
+      normalizeSize: false,
+    });
+    expect(result).toContain(`width="20"`);
+    expect(result).toContain(`height="10"`);
+  });
+});

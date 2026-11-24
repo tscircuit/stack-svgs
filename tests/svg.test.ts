@@ -345,6 +345,50 @@ describe("size normalization", () => {
     await expect(result).toMatchSvgSnapshot(import.meta.path);
   });
 
+
+  test("scales content of SVGs without viewBox when normalizing", () => {
+    const smallNoViewBox = `<svg width="50" height="50" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="50" height="50" fill="red" />
+</svg>`;
+    const largeNoViewBox = `<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="200" height="200" fill="blue" />
+</svg>`;
+
+    const result = stackSvgsHorizontally([smallNoViewBox, largeNoViewBox]);
+
+    // The 50x50 SVG is normalized up to 200x200 (scale factor 4), so its
+    // content must be scaled by 4 as well or it renders at a quarter size
+    expect(result).toContain("scale(4)");
+  });
+
+  test("scales content of SVGs without viewBox when normalizing vertically", () => {
+    const smallNoViewBox = `<svg width="50" height="50" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="50" height="50" fill="red" />
+</svg>`;
+    const largeNoViewBox = `<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="200" height="200" fill="blue" />
+</svg>`;
+
+    const result = stackSvgsVertically([smallNoViewBox, largeNoViewBox]);
+
+    expect(result).toContain("scale(4)");
+  });
+
+  test("does not scale content when normalization is disabled", () => {
+    const smallNoViewBox = `<svg width="50" height="50" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="50" height="50" fill="red" />
+</svg>`;
+    const largeNoViewBox = `<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="200" height="200" fill="blue" />
+</svg>`;
+
+    const result = stackSvgsHorizontally([smallNoViewBox, largeNoViewBox], {
+      normalizeSize: false,
+    });
+
+    expect(result).not.toContain("scale(");
+  });
+
   test("normalizes with custom target size", async () => {
     const result = stackSvgsVertically([redCircle, tallRectangle], {
       targetSize: 50
